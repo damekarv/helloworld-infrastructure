@@ -1,0 +1,47 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: helloworld
+  namespace: default
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: ./appManifests/helloworld
+      sourceRef:
+        kind: GitRepository
+        name: eks-infra
+        namespace: flux-system
+  values:
+    image:
+      repository: ghcr.io/damekarv/iac-prive
+      tag: v2.0.0 # Updated by CI
+    imagePullSecrets:
+      - name: ghcr-secret
+    replicaCount: 1
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+# ---
+# apiVersion: helm.toolkit.fluxcd.io/v2beta1
+# kind: HelmRelease
+# metadata:
+#   name: another-service
+#   namespace: default
+# spec:
+#   interval: 5m
+#   chart:
+#     spec:
+#       chart: ./appManifests/another-service
+#       sourceRef:
+#         kind: GitRepository
+#         name: flux-system
+#         namespace: flux-system
+#   values:
+#     image:
+#       repository: ghcr.io/damekarv/another-service
+#       tag: v1.0.0
+#     replicaCount: 1
