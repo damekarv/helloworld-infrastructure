@@ -24,14 +24,14 @@ on:
       - 'terraform/**'
     branches:
       - main
-      - simple-gitops
+      - terraform
   push:
     paths:
       - 'terraform/**'
       - 'clusters/**'
     branches:
       - main
-      - simple-gitops
+      - terraform
 
 permissions:
   id-token: write # Required for OIDC if we switch later
