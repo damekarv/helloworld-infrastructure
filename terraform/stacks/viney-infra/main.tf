@@ -123,6 +123,25 @@ module "flux" {
     }
   }
 
+
   depends_on = [module.eks]
+}
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  environment = var.environment
+  region      = "eu-west-1"
+
+  depends_on = [module.eks, module.karpenter]
+}
+
+module "flagger" {
+  source = "../../modules/flagger"
+
+  environment = var.environment
+  region      = "eu-west-1"
+
+  depends_on = [module.monitoring] # Flagger needs Prometheus
 }
 
