@@ -55,3 +55,20 @@ resource "aws_internet_gateway" "this" {
     Name = local.name
   })
 }
+
+resource "aws_eip" "nat" {
+  count  = length(var.vpc_public_subnets)
+  domain = "vpc"
+  tags = merge(local.tags, {
+    Name = "${local.name}-nat-${local.azs[count.index]}"
+  })
+}
+resource "aws_nat_gateway" "this" {
+  count = length(var.vpc_public_subnets)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+  tags = merge(local.tags, {
+    Name = "${local.name}-${local.azs[count.index]}"
+  })
+  depends_on = [aws_internet_gateway.this]
+}
