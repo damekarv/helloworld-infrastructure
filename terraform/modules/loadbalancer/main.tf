@@ -73,7 +73,16 @@ resource "aws_iam_policy" "alb_controller" {
   policy      = file("${path.module}/policies/alb_controller_policy.json") 
 }
 
+
 resource "aws_iam_role_policy_attachment" "alb_controller" {
   role       = aws_iam_role.alb_controller.name
   policy_arn = aws_iam_policy.alb_controller.arn
+}
+
+# Wait for the webhook service to be ready
+# The controller needs time to start and register endpoints before it can serve the webhook
+resource "time_sleep" "wait_for_controller" {
+  depends_on = [helm_release.aws_load_balancer_controller]
+
+  create_duration = "60s" 
 }

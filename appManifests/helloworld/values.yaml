@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/damekarv/iac-prive
+  repository: ghcr.io/damekarv/helloworld
   pullPolicy: IfNotPresent
   tag: ""
 

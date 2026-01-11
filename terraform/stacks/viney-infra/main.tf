@@ -124,7 +124,7 @@ module "flux" {
   }
 
 
-  depends_on = [module.eks]
+  depends_on = [module.eks, module.loadbalancer]
 }
 
 module "monitoring" {

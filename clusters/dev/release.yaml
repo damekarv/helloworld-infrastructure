@@ -25,23 +25,3 @@ spec:
   upgrade:
     remediation:
       retries: 3
-# ---
-# apiVersion: helm.toolkit.fluxcd.io/v2beta1
-# kind: HelmRelease
-# metadata:
-#   name: another-service
-#   namespace: default
-# spec:
-#   interval: 5m
-#   chart:
-#     spec:
-#       chart: ./appManifests/another-service
-#       sourceRef:
-#         kind: GitRepository
-#         name: flux-system
-#         namespace: flux-system
-#   values:
-#     image:
-#       repository: ghcr.io/damekarv/another-service
-#       tag: v1.0.0
-#     replicaCount: 1
