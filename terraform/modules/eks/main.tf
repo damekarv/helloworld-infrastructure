@@ -26,19 +26,17 @@ resource "aws_eks_cluster" "this" {
     endpoint_public_access  = true
   }
   
-  access_config {
-    authentication_mode                         = "API_AND_CONFIG_MAP"
-    bootstrap_cluster_creator_admin_permissions = true
-  }
-
-  dynamic "encryption_config" {
-    for_each = var.kms_key_arn != "" ? [1] : []
     content {
       provider {
         key_arn = var.kms_key_arn
       }
       resources = ["secrets"]
     }
+  }
+
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
   }
 
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
@@ -49,6 +47,28 @@ resource "aws_eks_cluster" "this" {
     aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy,
     aws_iam_role_policy_attachment.cluster_AmazonEKSVPCResourceController,
   ]
+}
+
+resource "aws_eks_access_entry" "this" {
+  for_each = var.access_entries
+
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.key
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "this" {
+  for_each = var.access_entries
+
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.key
+  policy_arn    = each.value.policy_arn
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.this]
 }
 
 ################################################################################

@@ -69,6 +69,12 @@ module "eks" {
   
   cluster_version = "1.34"
   kms_key_arn     = module.secrets.kms_key_arn
+
+  access_entries = {
+    (aws_iam_role.github_actions.arn) = {
+      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy"
+    }
+  }
 }
 
 module "karpenter" {

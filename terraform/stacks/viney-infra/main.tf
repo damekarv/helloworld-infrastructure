@@ -55,6 +55,12 @@ module "eks" {
   vpc_id          = module.vpc.vpc_id
   private_subnets = module.vpc.private_subnets
   public_subnets  = module.vpc.public_subnets
+
+  access_entries = {
+    (aws_iam_role.github_actions.arn) = {
+      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy"
+    }
+  }
 }
 
 module "karpenter" {
