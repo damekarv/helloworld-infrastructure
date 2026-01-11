@@ -29,6 +29,7 @@ on:
     paths:
       - 'terraform/**'
       - 'clusters/**'
+      - '.github/workflows/**'
     branches:
       - main
       - terraform

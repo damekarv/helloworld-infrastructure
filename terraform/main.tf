@@ -1,6 +1,8 @@
 provider "aws" {
   region = var.region
 
+  # Trigger workflow update
+
   default_tags {
     tags = {
       Project     = var.project_name
