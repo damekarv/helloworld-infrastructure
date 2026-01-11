@@ -48,8 +48,12 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          # Wait for pod to be ready (Helm --wait handles most, but this is extra safety)
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=helloworld -n helloworld --timeout=60s
+          # Debug: List resources to see what's actually running
+          echo "Debugging: Listing all resources in helloworld namespace"
+          kubectl get all -n helloworld
+
+          # Wait for pod to be ready (targeting the instance label to catch both primary and canary)
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=helloworld -n helloworld --timeout=120s
           
           # Simple connectivity test (using port-forward since Ingress might be internal or take time)
           kubectl port-forward svc/helloworld 8080:80 -n helloworld &
