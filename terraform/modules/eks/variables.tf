@@ -45,7 +45,8 @@ variable "extra_tags" {
 variable "access_entries" {
   description = "Map of IAM ARNs to access policies for EKS access entries"
   type        = map(object({
-    policy_arn = string
+    principal_arn = string
+    policy_arn    = string
   }))
   default     = {}
 }

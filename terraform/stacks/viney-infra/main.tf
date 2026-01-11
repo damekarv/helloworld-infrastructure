@@ -57,8 +57,9 @@ module "eks" {
   public_subnets  = module.vpc.public_subnets
 
   access_entries = {
-    (aws_iam_role.github_actions.arn) = {
-      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy"
+    github_actions = {
+      principal_arn = aws_iam_role.github_actions.arn
+      policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
     }
   }
 }

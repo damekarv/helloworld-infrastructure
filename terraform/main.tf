@@ -71,8 +71,9 @@ module "eks" {
   kms_key_arn     = module.secrets.kms_key_arn
 
   access_entries = {
-    (aws_iam_role.github_actions.arn) = {
-      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy"
+    github_actions = {
+      principal_arn = aws_iam_role.github_actions.arn
+      policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
     }
   }
 }
