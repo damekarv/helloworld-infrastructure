@@ -129,7 +129,7 @@ module "flux" {
       url         = "https://github.com/damekarv/helloworld-infrastructure"
       branch      = "main"
       path        = "./clusters/${var.environment}"
-      secret_name = "flux-system"
+      secret_name = "ghcr-secret"
     }
   }
 
