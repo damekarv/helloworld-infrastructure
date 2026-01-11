@@ -108,6 +108,11 @@ jobs:
         run: |
           ENV_NAME="${{ steps.target.outputs.env_name }}"
           terraform plan -var="environment=$ENV_NAME" -out=tfplan
+          ls -la
+          pwd
+
+      - name: Debug Files
+        run: ls -la
 
       - name: Terraform Apply
         if: ${{ steps.target.outputs.action == 'apply' }}
