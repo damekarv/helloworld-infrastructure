@@ -15,7 +15,7 @@ spec:
   values:
     image:
       repository: ghcr.io/damekarv/helloworld
-      tag: v1.6.0 # Updated by CI
+      tag: v0.4.0 # Updated by CI
     replicaCount: 2
   install:
     remediation:
