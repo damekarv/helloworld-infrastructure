@@ -127,7 +127,7 @@ module "flux" {
   repositories = {
     eks-infra = {
       url    = "https://github.com/damekarv/helloworld-infrastructure"
-      branch = "terraform"
+      branch = "main"
       path   = "./clusters/${var.environment}"
     }
   }

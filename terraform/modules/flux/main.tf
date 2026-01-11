@@ -24,8 +24,10 @@ resource "kubectl_manifest" "git_repositories" {
       url: ${each.value.url}
       ref:
         branch: ${each.value.branch}
+      %{ if each.value.secret_name != null }
       secretRef:
-        name: flux-system
+        name: ${each.value.secret_name}
+      %{ endif }
   YAML
 
   depends_on = [helm_release.flux2]

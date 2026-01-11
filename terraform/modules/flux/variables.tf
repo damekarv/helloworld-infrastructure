@@ -30,7 +30,8 @@ variable "repositories" {
     url      = string
     branch   = string
     path     = optional(string, "./clusters/dev") # Defaulting/Exmaple
-    interval = optional(string, "1m")
+    interval    = optional(string, "1m")
+    secret_name = optional(string)
   }))
   default = {}
 }
