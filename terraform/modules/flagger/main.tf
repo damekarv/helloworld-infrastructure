@@ -5,6 +5,8 @@ resource "helm_release" "ingress_nginx" {
   namespace        = "ingress-nginx"
   create_namespace = true
   version          = "4.10.0"
+  timeout          = 600
+  wait             = true
 
   values = [
     <<EOF
@@ -41,4 +43,6 @@ resource "helm_release" "flagger_loadtester" {
   chart      = "loadtester"
   namespace  = "flagger-system"
   version    = "0.28.0"
+
+  depends_on = [helm_release.flagger]
 }

@@ -16,6 +16,7 @@ resource "aws_secretsmanager_secret" "app_secret" {
   name        = "app/${local.name}-${var.name_suffix}/db-credentials"
   description = "Example application secret"
   kms_key_id  = aws_kms_key.secrets.id
+  recovery_window_in_days = 0
 
   tags = local.tags
 }
