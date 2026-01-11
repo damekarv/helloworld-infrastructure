@@ -44,6 +44,7 @@ module "vpc" {
 
   environment = var.environment
   region      = "eu-west-1"
+  name_suffix = random_string.suffix.result
 }
 
 module "eks" {
@@ -104,6 +105,7 @@ module "secrets" {
 
   environment = var.environment
   region      = "eu-west-1"
+  name_suffix = random_string.suffix.result
 }
 
 module "flux" {
