@@ -126,9 +126,10 @@ module "flux" {
 
   repositories = {
     eks-infra = {
-      url    = "https://github.com/damekarv/helloworld-infrastructure"
-      branch = "main"
-      path   = "./clusters/${var.environment}"
+      url         = "https://github.com/damekarv/helloworld-infrastructure"
+      branch      = "main"
+      path        = "./clusters/${var.environment}"
+      secret_name = "flux-system"
     }
   }
 
