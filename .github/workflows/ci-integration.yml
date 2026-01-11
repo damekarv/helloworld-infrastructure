@@ -56,7 +56,10 @@ jobs:
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=helloworld -n helloworld --timeout=120s
           
           # Simple connectivity test (using port-forward since Ingress might be internal or take time)
-          kubectl port-forward svc/helloworld 8080:80 -n helloworld &
+          # Target the stable service 'helloworld-primary' or just the pod directly.
+          # Assuming app runs on 8080 (standard non-root), but service maps 80->HTTP.
+          # Since connection refused on 80, let's try 8080.
+          kubectl port-forward svc/helloworld-primary 8080:8080 -n helloworld &
           PID=$!
           sleep 5
           
