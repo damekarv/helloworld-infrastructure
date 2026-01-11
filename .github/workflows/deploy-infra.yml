@@ -1,0 +1,120 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment (Workspace)'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
+          - dev
+      action:
+        description: 'Terraform Action'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+  pull_request:
+    paths:
+      - 'terraform/**'
+    branches:
+      - main
+      - terraform
+  push:
+    paths:
+      - 'terraform/**'
+      - 'clusters/**'
+      - '.github/workflows/**'
+    branches:
+      - main
+      - terraform
+
+permissions:
+  id-token: write # Required for OIDC if we switch later
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  TF_VERSION: '1.5.7'
+  WORKING_DIR: 'terraform/stacks/viney-infra'
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # OIDC Authentication
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine Target
+        id: target
+        run: |
+          # Default to Manual Input
+          ENV_NAME="${{ inputs.environment }}"
+          ACTION="${{ inputs.action }}"
+
+          # Overrides for Automated Events
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Event is Push: Auto-deploying to DEV"
+            ENV_NAME="dev"
+            ACTION="apply"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "Event is PR: Planning for DEV"
+            ENV_NAME="dev"
+            ACTION="plan"
+          fi
+          
+          # Fallback default (should cover manual dispatch with defaults if inputs are empty)
+          if [[ -z "$ENV_NAME" ]]; then ENV_NAME="prod"; fi
+          if [[ -z "$ACTION" ]]; then ACTION="plan"; fi
+
+          echo "Target Environment: $ENV_NAME"
+          echo "Target Action: $ACTION"
+          
+          echo "env_name=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "action=$ACTION" >> $GITHUB_OUTPUT
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Workspace Select
+        run: |
+          ENV_NAME="${{ steps.target.outputs.env_name }}"
+          terraform workspace select $ENV_NAME || terraform workspace new $ENV_NAME
+
+      - name: Terraform Plan
+        # Always run plan, as it is required for both Plan and Apply actions.
+        # if: ${{ steps.target.outputs.action == 'plan' || steps.target.outputs.action == 'apply' }}
+        run: |
+          ENV_NAME="${{ steps.target.outputs.env_name }}"
+          terraform plan -var="environment=$ENV_NAME" -out=tfplan
+          ls -la
+          pwd
+
+      - name: Debug Files
+        run: ls -la
+
+      - name: Terraform Apply
+        if: ${{ steps.target.outputs.action == 'apply' }}
+        run: terraform apply -auto-approve tfplan

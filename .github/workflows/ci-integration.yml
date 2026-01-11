@@ -1,0 +1,94 @@
+name: CI Integration
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags
+  workflow_dispatch:
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Create Kind Cluster
+        uses: helm/kind-action@v1.8.0
+        with:
+          cluster_name: integration-test
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init (Local Backend)
+        working-directory: terraform/stacks/viney-infra
+        run: |
+          # Override backend to use local state for ephemeral test
+          cat <<EOF > backend_override.tf
+          terraform {
+            backend "local" {
+              path = "terraform.tfstate"
+            }
+          }
+          EOF
+          terraform init
+
+      - name: Terraform Apply (Ephemeral)
+        working-directory: terraform/stacks/viney-infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-west-1
+        run: |
+          # We need to be careful not to create real AWS resources that conflict.
+          # For this test, we might want to mock AWS or use a separate test account.
+          # If we use the real account, we must ensure resources are unique or idempotent.
+          # For now, we'll run plan to verify syntax and logic, but maybe skip apply 
+          # if we don't want to spin up real RDS/VPC for every PR.
+          # OR, we use a "test" workspace.
+          
+          # For the sake of the user's request "How to apply prerequisite infra", 
+          # we WILL run apply but maybe targeting a mock or just verifying plan if cost is concern.
+          # Let's do a Plan for safety in this demo, unless user explicitly wants Apply.
+          # User asked "How to apply", so let's try to Apply but with a unique env name.
+          
+          terraform apply -auto-approve -var="environment=test-${{ github.run_id }}"
+
+      - name: Get Cluster Name (Mock)
+        run: echo "CLUSTER_NAME=integration-test" >> $GITHUB_ENV
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Deploy App (Dev Version)
+        run: |
+          # Extract version from clusters/dev/release.yaml
+          TAG=$(grep 'tag:' clusters/dev/release.yaml | awk '{print $2}')
+          
+          echo "Deploying version $TAG"
+          
+          helm upgrade --install helloworld ./appManifests/helloworld \
+            --set image.tag=$TAG \
+            --wait
+
+      - name: Run E2E Tests
+        run: |
+          # Simple curl test
+          kubectl port-forward svc/helloworld 8080:80 &
+          sleep 5
+          curl -f http://localhost:8080 || exit 1
+
+      - name: Teardown
+        if: always()
+        run: |
+          # Terraform Destroy
+          cd terraform/stacks/viney-infra
+          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          export AWS_REGION=eu-west-1
+          terraform destroy -auto-approve -var="environment=test-${{ github.run_id }}"

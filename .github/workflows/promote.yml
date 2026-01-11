@@ -1,0 +1,38 @@
+name: Promote to Prod
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          if ! command -v yq &> /dev/null; then
+             wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+          fi
+
+      - name: Promote Dev to Prod
+        run: |
+          # Extract version from dev
+          TAG=$(yq 'select(.metadata.name == "helloworld").spec.values.image.tag' clusters/dev/release.yaml)
+          
+          # Update prod (preserving other values like replicaCount)
+          yq -i "select(.metadata.name == \"helloworld\").spec.values.image.tag = \"$TAG\"" clusters/prod/release.yaml
+          
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: promote dev to prod"
+          title: "Promote Dev to Prod"
+          body: "Promoting `clusters/dev/release.yaml` to `clusters/prod/release.yaml`."
+          branch: "promote-prod"
+          base: "main"

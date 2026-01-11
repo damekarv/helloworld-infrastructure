@@ -1,0 +1,10 @@
+{
+    "release_version": "v202602.0.0",
+    "services": [
+        {
+            "name": "helloworld",
+            "version": "v0.1.0",
+            "image": "ghcr.io/damekarv/helloworld"
+        }
+    ]
+}
