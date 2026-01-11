@@ -151,6 +151,6 @@ module "flagger" {
   environment = var.environment
   region      = "eu-west-1"
 
-  depends_on = [module.monitoring] # Flagger needs Prometheus
+  depends_on = [module.monitoring, module.loadbalancer] # Flagger needs Prometheus and LoadBalancer
 }
 
