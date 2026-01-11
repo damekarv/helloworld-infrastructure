@@ -103,7 +103,7 @@ jobs:
           terraform workspace select $ENV_NAME || terraform workspace new $ENV_NAME
 
       - name: Terraform Plan
-        if: ${{ steps.target.outputs.action == 'plan' }}
+        if: ${{ steps.target.outputs.action == 'plan' || steps.target.outputs.action == 'apply' }}
         run: |
           ENV_NAME="${{ steps.target.outputs.env_name }}"
           terraform plan -var="environment=$ENV_NAME" -out=tfplan
