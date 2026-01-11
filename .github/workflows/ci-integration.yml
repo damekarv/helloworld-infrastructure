@@ -59,7 +59,11 @@ jobs:
           # Target the stable service 'helloworld-primary' or just the pod directly.
           # Assuming app runs on 8080 (standard non-root), but service maps 80->HTTP.
           # Since connection refused on 80, let's try 8080.
-          kubectl port-forward svc/helloworld-primary 8080:8080 -n helloworld &
+          # Get a pod name directly to bypass Service port validation
+          POD_NAME=$(kubectl get pod -n helloworld -l app.kubernetes.io/instance=helloworld -o jsonpath="{.items[0].metadata.name}")
+          
+          echo "Forwarding to pod: $POD_NAME"
+          kubectl port-forward pod/$POD_NAME 8080:8080 -n helloworld &
           PID=$!
           sleep 5
           
