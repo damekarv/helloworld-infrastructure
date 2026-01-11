@@ -39,8 +39,8 @@ jobs:
       - name: Commit and Tag
         if: steps.check.outputs.update == 'true'
         run: |
-          git config user.name "velann21"
-          git config user.email "velann21@gmail.com"
+          git config user.name "damekarv  "
+          git config user.email "damekarviney@gmail.com"
           
           git add release_manifest.json clusters/dev/release.yaml
           git commit -m "chore(release): update services for ${{ steps.check.outputs.release_tag }}"
