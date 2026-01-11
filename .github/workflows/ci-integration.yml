@@ -42,17 +42,17 @@ jobs:
           
           # Upgrade existing release or install if missing
           helm upgrade --install helloworld ./appManifests/helloworld \
-            --namespace default \
+            --namespace helloworld \
             --set image.tag=$TAG \
             --wait
 
       - name: Run E2E Tests
         run: |
           # Wait for pod to be ready (Helm --wait handles most, but this is extra safety)
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=helloworld --timeout=60s
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=helloworld -n helloworld --timeout=60s
           
           # Simple connectivity test (using port-forward since Ingress might be internal or take time)
-          kubectl port-forward svc/helloworld 8080:80 &
+          kubectl port-forward svc/helloworld 8080:80 -n helloworld &
           PID=$!
           sleep 5
           
