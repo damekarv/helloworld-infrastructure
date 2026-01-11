@@ -26,6 +26,8 @@ resource "aws_eks_cluster" "this" {
     endpoint_public_access  = true
   }
   
+  dynamic "encryption_config" {
+    for_each = var.kms_key_arn != "" ? [1] : []
     content {
       provider {
         key_arn = var.kms_key_arn
