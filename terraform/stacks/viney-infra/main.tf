@@ -155,3 +155,13 @@ module "flagger" {
   depends_on = [module.monitoring, module.loadbalancer] # Flagger needs Prometheus and LoadBalancer
 }
 
+resource "kubernetes_namespace" "helloworld" {
+  metadata {
+    labels = {
+      name = "helloworld"
+    }
+
+    name = "helloworld"
+  }
+}
+
