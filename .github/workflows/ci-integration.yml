@@ -9,58 +9,26 @@ on:
 jobs:
   integration-test:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-1
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
-      - name: Create Kind Cluster
-        uses: helm/kind-action@v1.8.0
-        with:
-          cluster_name: integration-test
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init (Local Backend)
-        working-directory: terraform/stacks/viney-infra
+      - name: Connect to EKS (Dev)
         run: |
-          # Override backend to use local state for ephemeral test
-          cat <<EOF > backend_override.tf
-          terraform {
-            backend "local" {
-              path = "terraform.tfstate"
-            }
-          }
-          EOF
-          terraform init
-
-      - name: Terraform Apply (Ephemeral)
-        working-directory: terraform/stacks/viney-infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: eu-west-1
-        run: |
-          # We need to be careful not to create real AWS resources that conflict.
-          # For this test, we might want to mock AWS or use a separate test account.
-          # If we use the real account, we must ensure resources are unique or idempotent.
-          # For now, we'll run plan to verify syntax and logic, but maybe skip apply 
-          # if we don't want to spin up real RDS/VPC for every PR.
-          # OR, we use a "test" workspace.
-          
-          # For the sake of the user's request "How to apply prerequisite infra", 
-          # we WILL run apply but maybe targeting a mock or just verifying plan if cost is concern.
-          # Let's do a Plan for safety in this demo, unless user explicitly wants Apply.
-          # User asked "How to apply", so let's try to Apply but with a unique env name.
-          
-          terraform apply -auto-approve -var="environment=test-${{ github.run_id }}"
-
-      - name: Get Cluster Name (Mock)
-        run: echo "CLUSTER_NAME=integration-test" >> $GITHUB_ENV
+          aws eks update-kubeconfig --region eu-west-1 --name dev-helloworld
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -70,25 +38,61 @@ jobs:
           # Extract version from clusters/dev/release.yaml
           TAG=$(grep 'tag:' clusters/dev/release.yaml | awk '{print $2}')
           
-          echo "Deploying version $TAG"
+          echo "Deploying version $TAG to Dev Environment"
           
+          # Upgrade existing release or install if missing
           helm upgrade --install helloworld ./appManifests/helloworld \
+            --namespace default \
             --set image.tag=$TAG \
             --wait
 
       - name: Run E2E Tests
         run: |
-          # Simple curl test
+          # Wait for pod to be ready (Helm --wait handles most, but this is extra safety)
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=helloworld --timeout=60s
+          
+          # Simple connectivity test (using port-forward since Ingress might be internal or take time)
           kubectl port-forward svc/helloworld 8080:80 &
+          PID=$!
           sleep 5
-          curl -f http://localhost:8080 || exit 1
+          
+          echo "Testing endpoint..."
+          curl -f http://localhost:8080 || (kill $PID && exit 1)
+          
+          kill $PID
 
-      - name: Teardown
-        if: always()
+      - name: Install yq
+        if: success()
         run: |
-          # Terraform Destroy
-          cd terraform/stacks/viney-infra
-          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          export AWS_REGION=eu-west-1
-          terraform destroy -auto-approve -var="environment=test-${{ github.run_id }}"
+          if ! command -v yq &> /dev/null; then
+             wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+          fi
+
+      - name: Promote to Prod
+        if: success()
+        run: |
+          # Capture the version from the current (tested) Dev configuration
+          TAG=$(grep 'tag:' clusters/dev/release.yaml | awk '{print $2}')
+          echo "Preparing to promote version $TAG to Production..."
+
+          # Configure Git Identity
+          git config user.name "damekarv"
+          git config user.email "damekarviney@gmail.com"
+
+          # Switch to main branch to commit the change
+          git fetch origin main
+          git checkout main
+          git pull origin main
+
+          # Update Prod Manifest
+          yq -i "select(.metadata.name == \"helloworld\").spec.values.image.tag = \"$TAG\"" clusters/prod/release.yaml
+
+          # Commit and Push
+          git add clusters/prod/release.yaml
+          
+          if git diff --staged --quiet; then
+            echo "Prod is already up to date with version $TAG"
+          else
+            git commit -m "chore(release): promote version $TAG to prod"
+            git push origin main
+          fi
