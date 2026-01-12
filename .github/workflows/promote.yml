@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  actions: write
+  contents: read
 
 jobs:
   promote:
