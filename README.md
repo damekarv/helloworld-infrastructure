@@ -44,6 +44,7 @@ graph TD
             Flux[Flux CD Controller]
             Flagger[Flagger Canary Controller]
             Karpenter[Karpenter Scaler]
+            Nodes[Worker Nodes]
             
             subgraph "Namespaces"
                 Dev["Namespace: helloworld (Dev)"]
@@ -62,7 +63,7 @@ graph TD
     
     Flagger -->|Traffic Splitting| Dev
     Flagger -->|Traffic Splitting| Prod
-    Karpenter -->|Provisions Nodes| EKS Cluster
+    Karpenter -->|Provisions Nodes| Nodes
 ```
 
 ---
