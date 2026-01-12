@@ -158,6 +158,20 @@ Terraform uses workspaces (`dev`, `prod`) or variables to switch contexts.
 *   `kubectl` & `helm`
 *   Active AWS Credentials (or profile)
 
+### Bootstrapping (One-Time Setup)
+Before the CI/CD pipeline can run, the following prerequisites must be established manually or via a local initial apply:
+
+1.  **State Backend:**
+    *   S3 Bucket: `viney-infra-tf-state-vin` (for Terraform State).
+    *   DynamoDB Table: `viney-infra-tf-lock-vin` (for State Locking).
+    *   *Create these manually via AWS Console or CLI.*
+    *   *Note:* These names are currently hardcoded in `versions.tf`. To make them dynamic, remove them from the file and pass them during init: `terraform init -backend-config="bucket=MY_BUCKET" ...`
+
+2.  **OIDC Authentication:**
+    *   GitHub Actions requires an IAM Identity Provider to exist to authenticate.
+    *   This is managed by `terraform/stacks/viney-infra/github-oidc.tf`.
+    *   **Action:** You must run `terraform apply` **locally** once to provision this provider and the IAM Role (`github-actions-infra-deploy`).
+
 ### Local Setup (Mac/Linux)
 
 1.  **Clone Repository:**
