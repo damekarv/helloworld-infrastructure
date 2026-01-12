@@ -46,8 +46,8 @@ graph TD
             Karpenter[Karpenter Scaler]
             
             subgraph "Namespaces"
-                Dev[Namespace: helloworld (Dev)]
-                Prod[Namespace: helloworld (Prod)]
+                Dev["Namespace: helloworld (Dev)"]
+                Prod["Namespace: helloworld (Prod)"]
             end
         end
     end
