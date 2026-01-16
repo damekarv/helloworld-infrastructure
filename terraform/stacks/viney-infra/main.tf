@@ -55,6 +55,8 @@ module "eks" {
   vpc_id          = module.vpc.vpc_id
   private_subnets = module.vpc.private_subnets
   public_subnets  = module.vpc.public_subnets
+  
+  cluster_endpoint_public_access_cidrs = var.allowed_ips
 
   access_entries = {
     github_actions = {

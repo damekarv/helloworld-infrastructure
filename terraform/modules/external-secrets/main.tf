@@ -75,7 +75,8 @@ resource "aws_iam_policy" "external_secrets" {
           "secretsmanager:ListSecretVersionIds"
         ]
         Resource = [
-          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:app/${local.name}/*"
+          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:app/${local.name}/*",
+          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:helloworld-ghcr-pat-*"
         ]
       },
       {

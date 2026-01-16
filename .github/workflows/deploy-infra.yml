@@ -46,7 +46,7 @@ env:
 jobs:
   terraform:
     name: Terraform
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -107,6 +107,10 @@ jobs:
         # Always run plan, as it is required for both Plan and Apply actions.
         # if: ${{ steps.target.outputs.action == 'plan' || steps.target.outputs.action == 'apply' }}
         run: |
+          
+          # Inject Allowed IPs from Secrets (must be a JSON string like '["0.0.0.0/0"]')
+          export TF_VAR_allowed_ips='${{ secrets.ALLOWED_IPS }}'
+          
           ENV_NAME="${{ steps.target.outputs.env_name }}"
           terraform plan -var="environment=$ENV_NAME" -out=tfplan
           ls -la

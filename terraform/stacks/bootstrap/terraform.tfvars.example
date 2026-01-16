@@ -1,0 +1,4 @@
+region = "eu-west-1"
+
+# Your home IP for SSH access to the runner
+allowed_ssh_cidrs = ["70.85.78.94/32"] # TODO: Restrict this
