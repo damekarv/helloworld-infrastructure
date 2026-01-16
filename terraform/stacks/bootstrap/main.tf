@@ -153,7 +153,7 @@ resource "aws_instance" "runner" {
   user_data = <<-EOF
               #!/bin/bash
               yum update -y
-              yum install -y libicu
+              yum install -y libicu git nodejs
               # Install Docker (Optional, for building containers)
               yum install -y docker
               systemctl enable docker
