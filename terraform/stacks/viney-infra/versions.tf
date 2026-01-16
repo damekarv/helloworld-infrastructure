@@ -2,10 +2,10 @@ terraform {
   required_version = ">= 1.5.0"
 
   backend "s3" {
-    bucket         = "viney-infra-tf-state-vin"
+    bucket         = "helloworld-terraform-state-xpn4pr"
     key            = "viney-infra/terraform.tfstate"
     region         = "eu-west-1"
-    dynamodb_table = "viney-infra-tf-lock-vin"
+    dynamodb_table = "helloworld-terraform-locks"
     encrypt        = true
   }
 
