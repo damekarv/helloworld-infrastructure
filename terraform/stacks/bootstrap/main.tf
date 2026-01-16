@@ -92,6 +92,40 @@ resource "aws_iam_role_policy_attachment" "github_actions_admin" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
+# Explicitly allow access to the S3 bucket for this project (though AdminAccess covers it, explicit is cleaner for audit)
+resource "aws_iam_role_policy" "s3_access" {
+  name = "${var.project_name}-s3-access"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          aws_s3_bucket.terraform_state.arn,
+          "${aws_s3_bucket.terraform_state.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = aws_dynamodb_table.terraform_locks.arn
+      }
+    ]
+  })
+}
+
 # ---------------------------------------------------------------------------------------------------------------------
 # SELF-HOSTED RUNNER INFRASTRUCTURE
 # ---------------------------------------------------------------------------------------------------------------------

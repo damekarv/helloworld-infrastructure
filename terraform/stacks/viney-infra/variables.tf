@@ -3,6 +3,12 @@ variable "environment" {
   type        = string
 }
 
+variable "project_name" {
+  description = "Project name"
+  type        = string
+  default     = "helloworld"
+}
+
 variable "allowed_ips" {
   description = "List of allowed IPs to access the EKS cluster"
   type        = list(string)
