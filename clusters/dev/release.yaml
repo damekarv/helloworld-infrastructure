@@ -3,7 +3,6 @@ kind: HelmRelease
 metadata:
   name: helloworld
   namespace: helloworld
-  targetNamespace: helloworld
 spec:
   interval: 5m
   chart:
