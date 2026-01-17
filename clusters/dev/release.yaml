@@ -4,6 +4,7 @@ metadata:
   name: helloworld
   namespace: helloworld
 spec:
+  targetNamespace: helloworld
   interval: 5m
   chart:
     spec:
