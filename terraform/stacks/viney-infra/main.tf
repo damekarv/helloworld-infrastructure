@@ -63,6 +63,11 @@ module "eks" {
       principal_arn = "arn:aws:iam::534743594728:role/${var.project_name}-github-actions-role" # Hardcoded for now or pass as variable
       policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
     }
+
+    viney_damekar = {
+      principal_arn = "arn:aws:iam::534743594728:user/viney.damekar"
+      policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+    }
   }
 }
 
@@ -136,7 +141,7 @@ module "flux" {
   }
 
 
-  depends_on = [module.eks, module.loadbalancer]
+  depends_on = [module.eks, module.loadbalancer, module.external_secrets]
 }
 
 module "monitoring" {

@@ -35,3 +35,45 @@ variable "repositories" {
   }))
   default = {}
 }
+
+variable "cluster_secret_store" {
+  description = "Configuration for ClusterSecretStore"
+  type = object({
+    enabled = bool
+    name    = string
+  })
+  default = {
+    enabled = true
+    name    = "aws-secrets-manager"
+  }
+}
+
+variable "ghcr_secret" {
+  description = "Configuration for GHCR ExternalSecret (Flux System)"
+  type = object({
+    enabled     = bool
+    name        = string
+    secret_name = string # AWS Secrets Manager Secret Name
+  })
+  default = {
+    enabled     = true
+    name        = "flux-system"
+    secret_name = "helloworld-ghcr-pat"
+  }
+}
+
+variable "app_ghcr_secret" {
+  description = "Configuration for App Image Pull Secret (Helloworld Namespace)"
+  type = object({
+    enabled     = bool
+    name        = string
+    namespace   = string
+    secret_name = string # AWS Secrets Manager Secret Name
+  })
+  default = {
+    enabled     = true
+    name        = "helloworld-ghcr-pat"
+    namespace   = "helloworld"
+    secret_name = "helloworld-ghcr-pat"
+  }
+}

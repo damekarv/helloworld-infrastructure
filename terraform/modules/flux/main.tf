@@ -10,6 +10,95 @@ resource "helm_release" "flux2" {
   create_namespace = true
 }
 
+resource "kubectl_manifest" "cluster_secret_store" {
+  count = var.cluster_secret_store.enabled ? 1 : 0
+
+  yaml_body = <<-YAML
+    apiVersion: external-secrets.io/v1
+    kind: ClusterSecretStore
+    metadata:
+      name: ${var.cluster_secret_store.name}
+    spec:
+      provider:
+        aws:
+          service: SecretsManager
+          region: ${var.region}
+          auth:
+            jwt:
+              serviceAccountRef:
+                name: external-secrets
+                namespace: external-secrets
+  YAML
+
+  depends_on = [helm_release.flux2]
+}
+
+resource "kubectl_manifest" "ghcr_secret" {
+  count = var.ghcr_secret.enabled ? 1 : 0
+
+  yaml_body = <<-YAML
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: ${var.ghcr_secret.name}
+      namespace: flux-system
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        name: ${var.cluster_secret_store.name}
+        kind: ClusterSecretStore
+      target:
+        name: ${var.ghcr_secret.name}
+        creationPolicy: Owner
+      data:
+        - secretKey: username
+          remoteRef:
+            key: ${var.ghcr_secret.secret_name}
+            property: username
+        - secretKey: password
+          remoteRef:
+            key: ${var.ghcr_secret.secret_name}
+            property: password
+  YAML
+
+  depends_on = [kubectl_manifest.cluster_secret_store]
+}
+
+resource "kubectl_manifest" "app_ghcr_secret" {
+  count = var.app_ghcr_secret.enabled ? 1 : 0
+
+  yaml_body = <<-YAML
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: ${var.app_ghcr_secret.name}
+      namespace: ${var.app_ghcr_secret.namespace}
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        name: ${var.cluster_secret_store.name}
+        kind: ClusterSecretStore
+      target:
+        name: ${var.app_ghcr_secret.name}
+        creationPolicy: Owner
+        template:
+          type: kubernetes.io/dockerconfigjson
+          data:
+            .dockerconfigjson: '{"auths":{"ghcr.io":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}'
+      data:
+        - secretKey: username
+          remoteRef:
+            key: ${var.app_ghcr_secret.secret_name}
+            property: username
+        - secretKey: password
+          remoteRef:
+            key: ${var.app_ghcr_secret.secret_name}
+            property: password
+  YAML
+
+  depends_on = [kubectl_manifest.cluster_secret_store]
+}
+
 resource "kubectl_manifest" "git_repositories" {
   for_each = var.repositories
 
