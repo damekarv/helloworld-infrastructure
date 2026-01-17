@@ -145,7 +145,7 @@ module "monitoring" {
   environment = var.environment
   region      = "eu-west-1"
 
-  depends_on = [module.eks, module.karpenter]
+  depends_on = [module.eks, module.karpenter, module.loadbalancer]
 }
 
 module "flagger" {
